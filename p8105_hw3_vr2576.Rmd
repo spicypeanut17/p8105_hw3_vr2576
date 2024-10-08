@@ -109,7 +109,7 @@ ggplot(avg_temp, aes(x = year, y = avg_tmax, color = factor(month))) +
   scale_color_brewer(palette = "Accent") + 
   theme_minimal() + 
   theme(legend.position = "right")
-ggsave("avg_tmax_janjuly.png")
+ggsave("avg_tmax_janjuly.png", width = 8, height = 6, dpi = 100)
 
 
 # Two-panel plot showing 
@@ -175,8 +175,6 @@ ggsave("q1_two_panel_plot.png")
 # Three-panel plot 
 (heatmap | densityplot / violin_plot)
 ggsave("q1_three_panel_plot.png")
-
-
 
 ```
 
