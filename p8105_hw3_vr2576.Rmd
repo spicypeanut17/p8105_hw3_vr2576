@@ -109,7 +109,7 @@ ggplot(avg_temp, aes(x = year, y = avg_tmax, color = factor(month))) +
   scale_color_brewer(palette = "Accent") + 
   theme_minimal() + 
   theme(legend.position = "right")
-ggsave("avg_tmax_janjuly.png", width = 8, height = 6, dpi = 100)
+ggsave("avg_tmax_janjuly.jpg", width = 8, height = 6, dpi = 100)
 
 
 # Two-panel plot showing 
@@ -123,7 +123,7 @@ heatmap <- ggplot(ny_noaa_hw3, aes(x = tmin, y = tmax)) +
        y = "Maximum Temperature (°C)") +
   theme_minimal()
 heatmap
-ggsave("temp_relationship_heatmap.png")
+ggsave("temp_relationship_heatmap.jpg")
 
 # Density Plot
 densityplot <- ggplot(ny_noaa_hw3, aes(x = tmin, y = tmax)) +  
@@ -133,7 +133,7 @@ densityplot <- ggplot(ny_noaa_hw3, aes(x = tmin, y = tmax)) +
     y = "Maximum Temperature (°C)") +
   theme_minimal()
 densityplot
-ggsave("temp_relationship_densityplot.png", width = 8, height = 6, dpi = 100)
+ggsave("temp_relationship_densityplot.jpg", width = 8, height = 6, dpi = 100)
 
 
 # (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 cm separately by year
@@ -150,7 +150,7 @@ histogram <- snowfall_data |>
        y = "Count") +
   theme_minimal()
 histogram
-ggsave("snowfall_dist_histogram.png", width = 8, height = 6, dpi = 100)
+ggsave("snowfall_dist_histogram.jpg", width = 8, height = 6, dpi = 100)
 
 
 # Violin Plot
@@ -164,17 +164,17 @@ violin_plot <- snowfall_data |>
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 violin_plot
-ggsave("snowfall_dist_violin.png", width = 8, height = 6, dpi = 100)
+ggsave("snowfall_dist_violin.jpg", width = 8, height = 6, dpi = 100)
 
 
 # Two-panel plot
 (heatmap | violin_plot)
-ggsave("q1_two_panel_plot.png", width = 8, height = 6, dpi = 100)
+ggsave("q1_two_panel_plot.jpg", width = 8, height = 6, dpi = 100)
 
 
 # Three-panel plot 
 (heatmap | densityplot / violin_plot)
-ggsave("q1_three_panel_plot.png", width = 8, height = 6, dpi = 100)
+ggsave("q1_three_panel_plot.jpg", width = 8, height = 6, dpi = 100)
 
 ```
 
