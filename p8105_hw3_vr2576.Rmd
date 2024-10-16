@@ -25,6 +25,10 @@ library(RColorBrewer)
 library(patchwork)
 library(knitr)
 
+
+# install.packages("here")
+library(here)
+
 ```
 
 
@@ -43,7 +47,7 @@ glimpse(ny_noaa)
 
 # Clean dataset
 ny_noaa_hw3 <- ny_noaa |>
-  separate(date, into = c("year", "month", "day"), sep = "-") |>
+  separate(date, into = c("year", "month", "day"), convert = TRUE) |>
   mutate(
     year = as.numeric(year),
     month = as.numeric(month),
@@ -54,39 +58,37 @@ ny_noaa_hw3 <- ny_noaa |>
     tmin = tmin / 10, # Convert min temperature to Celsius
     prcp = prcp / 10, # Convert precipitation to mm
     snowfall = snow / 10, # Convert snowfall to cm
-    snwd = snwd / 10) # Convert snow depth to cm
+    snwd = snwd / 10) # Convert snow depth to cm 
 
 
 # What are the most commonly observed snowfall values? Why?
 snowfall_values <- ny_noaa_hw3 |>
-  filter(!is.na(snowfall)) %>%
-  count(snowfall, sort = TRUE)
+  count(snow, sort = TRUE)
 snowfall_values
 
-#  A tibble: 281 × 2
-#    snowfall      n
-#       <dbl>   <int>
-#  1      0   2008508
-#  2      2.5   31022
-#  3      1.3   23095
-#  4      5.1   18274
-#  5      7.6   10173
-#  6      0.8    9962
-#  7      0.5    9748
-#  8      3.8    9197
-#  9      0.3    8790
-# 10     10.2    6552
+#  A tibble: 282 × 2
+#     snow       n
+#    <int>   <int>
+#  1     0 2008508
+#  2    NA  381221
+#  3    25   31022
+#  4    13   23095
+#  5    51   18274
+#  6    76   10173
+#  7     8    9962
+#  8     5    9748
+#  9    38    9197
+# 10     3    8790
 
-# The most common snowfall value is 0 cm, which reflects days when no snow was observed. This makes sense as snowfall is a less frequent event compared to other weather conditions.
+# The most common snowfall value is 0 cm (2008508 days), which reflects days when no snow was observed. This makes sense as snowfall is a less frequent event compared to other weather conditions. The other most common values were NA (missing data), 25, and 13 mm. 
 
 
 # Two-panel plot showing average max temperature in January and July across stations
 # Avg max temp by year and station for January and July
 avg_temp <- ny_noaa_hw3 |>
-  filter(month %in% c(1, 7)) |>
   group_by(year, id, month) |>
+  filter(month %in% c(1, 7)) |>
   summarize(avg_tmax = mean(tmax, na.rm = TRUE)) |>
-  ungroup() |>
   mutate(month = factor(month, 
                          levels = c(1, 7), 
                          labels = c("January", "July")))
@@ -118,7 +120,7 @@ heatmap <- ggplot(ny_noaa_hw3, aes(x = tmin, y = tmax)) +
        y = "Maximum Temperature (°C)") +
   theme_minimal()
 heatmap
-ggsave("temp_relationship_heatmap.jpg")
+ggsave("temp_relationship_heatmap.jpg", width = 8, height = 6, dpi = 100)
 
 # Density Plot
 densityplot <- ggplot(ny_noaa_hw3, aes(x = tmin, y = tmax)) +  
@@ -148,34 +150,33 @@ histogram
 ggsave("snowfall_dist_histogram.jpg", width = 8, height = 6, dpi = 100)
 
 
-# Violin Plot
-violin_plot <- snowfall_data |>
-  ggplot(aes(x = factor(year), y = snow)) +
-  geom_violin(fill = "#CCCCFF", alpha = 0.5) +
+# Ridge Plot
+ridge_plot <- snowfall_data |>
+  ggplot(aes(x = snow, y = factor(year))) +
+  geom_density_ridges() +
   labs(
     title = "Distribution of Snowfall (0 < Snowfall < 100) by Year",
-    x = "Year",
-    y = "Snowfall (mm)") +
+    x = "Snowfall (mm)", 
+    y = "Year") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-violin_plot
-ggsave("snowfall_dist_violin.jpg", width = 8, height = 6, dpi = 100)
-
+ridge_plot
+ggsave("snowfall_dist_ridge.jpg", width = 8, height = 6, dpi = 100)
 
 # Two-panel plot
-(heatmap | violin_plot)
+(heatmap | ridge_plot)
 ggsave("q1_two_panel_plot.jpg", width = 8, height = 6, dpi = 100)
 
 
 # Three-panel plot 
-(heatmap | densityplot / violin_plot)
+(heatmap | densityplot / ridge_plot)
 ggsave("q1_three_panel_plot.jpg", width = 8, height = 6, dpi = 100)
 
 ```
 
 
 **What are the most commonly observed snowfall values? Why?**
-The most common snowfall value is `snowfall$count` cm, which reflects days when no snow was observed. This makes sense as snowfall is a less frequent event compared to other weather conditions.
+The most common snowfall value is `snowfall$count` cm (2008508 days), which reflects days when no snow was observed. This makes sense as snowfall is a less frequent event compared to other weather conditions. The other most common values were NA (missing data), 25, and 13 mm. 
 
 
 **Average max temperature in January and July across stations**
@@ -190,14 +191,16 @@ The hexbin plot shows a clear linear relationship between the maximum and minimu
 
 Most snowfall events occur during the winter months, with significant snowfall recorded in some years while in other years the snowfall amounts might be minimal.
 
+The ridge plot shows variation between snowfall amounts depending on the time of year, as expected. Most of the snowfall is between 0 to 30 mm. 
+
 
 ## Problem 2: NHANES
 
 ```{r problem2}
 
 # Load the CSV files & observe the datasets
-demographics <- read.csv("nhanes_covar.csv")
-accelerometer <- read.csv("nhanes_accel.csv")
+demographics <- read_csv(here("data", "nhanes_covar.csv"))
+accelerometer <- read_csv(here("data", "nhanes_accel.csv"))
 
 glimpse(demographics)
 glimpse(accelerometer)
@@ -214,11 +217,12 @@ accelerometer_long <- accelerometer_long %>%
   mutate(minute = as.numeric(str_replace(minute, "min", ""))) # Make the "minute" column numeric
 
 demographics <- demographics |>
-  clean_names() |>
-  rename(seqn = x, 
+  clean_names()
+demographics <- demographics |>
+  rename(seqn = x1, 
          sex = x1_male, 
-         age = x_1, 
-         bmi = x_2, 
+         age = x3, 
+         bmi = x4, 
          education = x1_less_than_high_school) |>  # Rename variables 
   slice(-c(1:4)) |>  # Remove the first four rows
   mutate(seqn = as.numeric(seqn), 
@@ -278,7 +282,7 @@ ggplot(merged_data_unique, aes(x = age, fill = sex)) +
   labs(title = "Age Distributions by Education Level and Sex",
        x = "Age",
        y = "Density") +
-  theme_fivethirtyeight()
+  theme_bw()
 ggsave("density_plot.jpg", width = 8, height = 6, dpi = 100)
 
 
@@ -288,18 +292,18 @@ ggplot(merged_data_unique, aes(x = age, fill = sex)) +
   facet_wrap(~ education) +
   labs(title = "Age Distribution by Education Level and Sex",
        x = "Age (years)",
-       y = "Count") +
-  theme_minimal()
+       y = "Count") + 
+  theme_bw()
 ggsave("histogram.jpg", width = 8, height = 6, dpi = 100)
 
 
 # Aggregate to create total activity variable
-total_activity <- merged_data %>%
-  group_by(seqn) %>%
+total_activity <- merged_data |>
+  group_by(seqn) |>
   summarise(total_activity = sum(MIMS, na.rm = TRUE), .groups = "drop")
 
-merged_data <- merged_data %>%
-  left_join(total_activity, by = "seqn")
+merged_data <- merged_data |>
+  full_join(total_activity, by = "seqn")
 
 
 # Plot total activities vs age, with panels for education levels and color by sex
@@ -310,7 +314,8 @@ ggplot(merged_data, aes(x = age, y = total_activity, color = sex)) +
   labs(title = "Total Activity vs Age by Education Level",
        x = "Age (years)",
        y = "Total Activity (MIMS)") +
-  theme_fivethirtyeight()
+  scale_colour_brewer(type = "seq", palette = "Accent") +
+  theme_fivethirtyeight() 
 ggsave("total_activity.jpg", width = 8, height = 6, dpi = 100)
 
 
@@ -321,6 +326,7 @@ ggplot(merged_data, aes(x = minute, y = MIMS, color = sex)) +
   labs(title = "24-Hour Activity Time Course by Education Level",
        x = "Minute of the Day",
        y = "Total Activity (MIMS)") +
+  scale_colour_brewer(type = "seq", palette = "Accent") +
   theme_minimal()
 ggsave("24hr-activity.jpg", width = 8, height = 6, dpi = 100)
 
@@ -352,22 +358,22 @@ The 24-hour activity pattern shows distinct peaks in activity during the day, es
 ```{r problem3}
 
 # Load the CSV files & observe the datasets
-jan2020 <- read_csv("citibike/Jan 2020 Citi.csv") |>
+jan2020 <- read_csv(here("data/citibike", "Jan 2020 Citi.csv")) |>
   clean_names() |>  
   mutate(year = 2020,
          month = 1)  # Add two columns to track which month and year
 
-jan2024 <- read_csv("citibike/Jan 2024 Citi.csv") |>
+jan2024 <- read_csv(here("data/citibike", "Jan 2024 Citi.csv")) |>
   clean_names() |>  
   mutate(year = 2024,
          month = 1)  
 
-july2020 <- read_csv("citibike/July 2020 Citi.csv") |>
+july2020 <- read_csv(here("data/citibike", "July 2020 Citi.csv")) |>
   clean_names() |>  
   mutate(year = 2020,
          month = 7)  
 
-july2024 <- read_csv("citibike/July 2024 Citi.csv") |>
+july2024 <- read_csv(here("data/citibike", "July 2024 Citi.csv")) |>
   clean_names() |>  
   mutate(year = 2024,
          month = 7) 
@@ -452,7 +458,7 @@ ggplot(duration_summary, aes(x = weekdays, y = median_duration, fill = month)) +
   facet_wrap(~ year) +
   theme_fivethirtyeight() +
   labs(title = "Median Ride Duration by Day, Month, and Year", 
-       x = "Day of the Week", y = "Median Ride Duration (minutes)")
+       x = "Day of the Week", y = "Median Ride Duration (minutes)") 
 ggsave("dmy_ride_duration.jpg", width = 8, height = 6, dpi = 100)
 
 
@@ -465,7 +471,7 @@ ggplot(citibike_2024, aes(x = month, y = duration, fill = member_casual)) +
   facet_wrap(~ rideable_type) +
   theme_fivethirtyeight() + 
   labs(title = "Ride Duration by Month, Membership Status, and Bike Type in 2024",
-       x = "Month", y = "Ride Duration (minutes)")
+       x = "Month", y = "Ride Duration (minutes)") 
 ggsave("2024_ride_duration.jpg", width = 8, height = 6, dpi = 100)
 
 
